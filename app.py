@@ -145,7 +145,7 @@ def teacher_dashboard():
         db.session.commit()
         return redirect(url_for('teacher_dashboard'))
 
-    tasks = Task.query.all()
+    tasks = Task.query.filter_by(teacher_id=current_user.id).all()
     return render_template('teacher_dashboard.html', form=form, tasks=tasks)
 
 @app.route('/student_dashboard')
