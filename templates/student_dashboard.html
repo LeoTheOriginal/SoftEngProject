@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block head %}
+    <title>Dashboard Ucznia</title>
+{% endblock %}
+
+{% block body %}
+<div class="content">
+    <a href="{{ url_for('logout') }}">Wyloguj się</a>
+
+    <h1>Witaj, {{ current_user.name }} {{ current_user.surname }}! (Uczeń)</h1>
+
+    <h2>Twoje zadania:</h2>
+    <ul>
+        {% for task in tasks %}
+            <li>
+                <strong>{{ task.content }}</strong><br>
+                <em>Przypisane przez: {{ task.teacher.name }} {{ task.teacher.surname }}</em><br>
+                <em>Status: {% if task.completed %}Zakończone{% else %}Do wykonania{% endif %}</em><br>
+                {% if not task.completed %}
+                    <form method="POST" action="{{ url_for('mark_task_completed', task_id=task.id) }}">
+                        <button type="submit">Zakończ zadanie</button>
+                    </form>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

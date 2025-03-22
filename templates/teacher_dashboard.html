@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block head %}
+    <title>Dashboard Nauczyciela</title>
+{% endblock %}
+
+{% block body %}
+<div class="content">
+    <a href="{{ url_for('logout') }}">Wyloguj się</a>
+
+    <h1>Witaj, {{ current_user.name }} {{ current_user.surname }}! (Nauczyciel)</h1>
+
+    <h2>Przypisz nowe zadanie</h2>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div>
+            <label for="content">Treść zadania:</label>
+            {{ form.content(class="form-control") }}
+        </div>
+        <div>
+            <label for="student_id">Wybierz ucznia:</label>
+            {{ form.student_id(class="form-control") }}
+        </div>
+        <div>
+            <button type="submit">Przypisz zadanie</button>
+        </div>
+    </form>
+
+    <h2>Lista przypisanych zadań:</h2>
+    <ul>
+        {% for task in tasks %}
+            <li>
+                <strong>{{ task.content }}</strong><br>
+                <em>Przypisane przez: {{ task.teacher.name }} {{ task.teacher.surname }}</em><br>
+                <em>Uczeń: {{ task.student.name }} {{ task.student.surname }}</em><br>
+                <em>Status: {% if task.completed %}Zakończone{% else %}Do wykonania{% endif %}</em><br>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}
