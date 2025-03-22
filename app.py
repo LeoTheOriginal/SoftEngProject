@@ -1,20 +1,54 @@
-from flask import Flask, render_template, url_for, redirect, request
+from flask import Flask, render_template, url_for, redirect, request, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from flask_wtf import FlaskForm
 from flask_bcrypt import Bcrypt
 from wtforms import StringField, PasswordField, SubmitField, SelectField, DateField, IntegerField
+from wtforms import StringField, PasswordField, SubmitField, SelectField, DateField, IntegerField
 from wtforms.validators import InputRequired, Length, ValidationError
 from datetime import datetime
+from werkzeug.utils import secure_filename
+import os
+import uuid
+
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg'}
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///changeItXD.db'
 app.config['SECRET_KEY'] = 'trzebazmienic'
+app.config['UPLOAD_FOLDER'] = 'uploads'
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 
 with app.app_context():
     db.create_all()
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return "No file part", 400
+    file = request.files['file']
+    if file.filename == '':
+        return "No selected file", 400
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(file_path)
+
+        task_id = request.form.get('task_id')
+        task = Task.query.get(task_id)
+        if task:
+            task.file_path = file_path
+            db.session.commit()
+
+        return f"File uploaded: {filename}", 200
+
+@app.route('/uploads/<path:filepath>')
+def uploaded_file(filepath):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filepath, as_attachment=True)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -35,6 +69,7 @@ class Task(db.Model):
     answer = db.Column(db.String(200), nullable=True)
     max_points = db.Column(db.Integer, nullable=True)
     grade = db.Column(db.Integer, nullable=True)
+    file_path = db.Column(db.String(255), nullable=True)
 
     student = db.relationship('User', foreign_keys=[student_id], backref='tasks')
     teacher = db.relationship('User', foreign_keys=[teacher_id])
@@ -75,6 +110,8 @@ class TaskForm(FlaskForm):
     content = StringField('Treść zadania', validators=[InputRequired(), Length(min=4, max=200)])
     student_id = SelectField('Wybierz ucznia', coerce=int, validators=[InputRequired()])
     due_date = DateField('Termin wykonania', format='%Y-%m-%d', validators=[InputRequired()])
+    grade = IntegerField('Ocena')
+    max_points = IntegerField('Maksymalna liczba punktów', validators=[InputRequired()])
     grade = IntegerField('Ocena')
     max_points = IntegerField('Maksymalna liczba punktów', validators=[InputRequired()])
     submit = SubmitField('Dodaj zadanie')
@@ -148,6 +185,8 @@ def teacher_dashboard():
             teacher_id=current_user.id,
             due_date=form.due_date.data,
             max_points=form.max_points.data
+            due_date=form.due_date.data,
+            max_points=form.max_points.data
         )
         db.session.add(new_task)
         db.session.commit()
@@ -173,6 +212,15 @@ def mark_task_completed(task_id):
 
     if task and task.student_id == current_user.id:
         answer = request.form.get('answer')
+        file = request.files['file']
+        file_path = None
+        if file and allowed_file(file.filename):
+            filename = secure_filename(f"{uuid.uuid4().hex}_{file.filename}")
+            file_folder = os.path.join(app.config['UPLOAD_FOLDER'], f"student_{task.student_id}")
+            os.makedirs(file_folder, exist_ok=True)
+            file_path = os.path.join(file_folder, filename)
+            file.save(file_path)
+            task.file_path = file_path
         if answer:
             task.answer = answer
             task.sent_date = datetime.now()

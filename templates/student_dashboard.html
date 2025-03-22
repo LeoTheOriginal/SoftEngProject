@@ -19,14 +19,19 @@
                 <em>Status: {% if task.completed %}Zakończone{% else %}Do wykonania{% endif %}</em><br>
                 <em>Termin wykonania: {{ task.due_date.strftime('%Y-%m-%d') }}</em><br>
                 <em>Maksymalna ilość punktów: {{ task.max_points }}</em><br>
+                <em>Maksymalna ilość punktów: {{ task.max_points }}</em><br>
                 {% if not task.completed %}
-                    <form method="POST" action="{{ url_for('mark_task_completed', task_id=task.id) }}">
+                    <form method="POST" action="{{ url_for('mark_task_completed', task_id=task.id) }}" enctype="multipart/form-data">
                         <textarea name="answer" placeholder="Twoja odpowiedź..." required></textarea>
+                        <input type="file" name="file">
                         <button type="submit">Zakończ zadanie</button>
                     </form>
                 {% endif %}
                 {% if task.completed %}
                     <p><strong>Odpowiedź na zadanie:</strong> {{ task.answer }}</p>
+                    {% if task.file_path %}
+                    <p>Załącznik: <a href="{{ url_for('uploaded_file', filepath=task.file_path.split('uploads/')[1]) }}">Pobierz</a></p>
+                    {% endif %}
                     <p><strong>Data wysłania odpowiedzi:</strong> {{ task.sent_date.strftime('%Y-%m-%d %H:%M:%S') }}</p>
                     {% if task.due_date and task.sent_date > task.due_date %}
                         <p style="color: red;"><strong>Przekroczono termin oddania!</strong></p>
