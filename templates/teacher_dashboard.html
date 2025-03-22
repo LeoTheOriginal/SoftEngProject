@@ -26,6 +26,10 @@
             {{ form.due_date(class="form-control") }}
         </div>
         <div>
+            <label for="max_points">Maksymalna ilość punktów:</label>
+            {{ form.max_points(class="form-control") }}
+        </div>
+        <div>
             <button type="submit">Przypisz zadanie</button>
         </div>
     </form>
@@ -38,7 +42,27 @@
                 <em>Przypisane przez: {{ task.teacher.name }} {{ task.teacher.surname }}</em><br>
                 <em>Uczeń: {{ task.student.name }} {{ task.student.surname }}</em><br>
                 <em>Termin wykonania: {{ task.due_date.strftime('%Y-%m-%d') }}</em><br>
+                <em>Maksymalna ilość punktów: {{ task.max_points }}</em><br>
                 <em>Status: {% if task.completed %}Zakończone{% else %}Do wykonania{% endif %}</em><br>
+                {% if task.completed %}
+                    <p><strong>Odpowiedź ucznia:</strong> {{ task.answer }}</p>
+                    {% if task.due_date and task.sent_date > task.due_date %}
+                            <p style="color: red;"><strong>Przekroczono termin oddania!</strong></p>
+                    {% endif %}
+                    {% if task.grade %}
+                        <p><strong>Ocena: </strong>{{ task.grade }}</p>
+                    {% else %}
+                    <form method="POST" action="{{ url_for('grade_task', task_id=task.id) }}">
+                        <div>
+                            <label for="grade">Ocena: </label>
+                            {{ form.grade(class="form-control") }}
+                        </div>
+                        <div>
+                            <button type="submit">Zatwierdź ocene</button>
+                        </div>
+                    </form>
+                    {% endif %}
+                {% endif %}
             </li>
         {% endfor %}
     </ul>

@@ -1,10 +1,11 @@
-from flask import Flask, render_template, url_for, redirect
+from flask import Flask, render_template, url_for, redirect, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from flask_wtf import FlaskForm
 from flask_bcrypt import Bcrypt
-from wtforms import StringField, PasswordField, SubmitField, SelectField, DateField
+from wtforms import StringField, PasswordField, SubmitField, SelectField, DateField, IntegerField
 from wtforms.validators import InputRequired, Length, ValidationError
+from datetime import datetime
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///changeItXD.db'
@@ -30,6 +31,10 @@ class Task(db.Model):
     teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     completed = db.Column(db.Boolean, default=False)
     due_date = db.Column(db.DateTime, nullable=True)
+    sent_date = db.Column(db.DateTime, nullable=True)
+    answer = db.Column(db.String(200), nullable=True)
+    max_points = db.Column(db.Integer, nullable=True)
+    grade = db.Column(db.Integer, nullable=True)
 
     student = db.relationship('User', foreign_keys=[student_id], backref='tasks')
     teacher = db.relationship('User', foreign_keys=[teacher_id])
@@ -70,6 +75,8 @@ class TaskForm(FlaskForm):
     content = StringField('Treść zadania', validators=[InputRequired(), Length(min=4, max=200)])
     student_id = SelectField('Wybierz ucznia', coerce=int, validators=[InputRequired()])
     due_date = DateField('Termin wykonania', format='%Y-%m-%d', validators=[InputRequired()])
+    grade = IntegerField('Ocena')
+    max_points = IntegerField('Maksymalna liczba punktów', validators=[InputRequired()])
     submit = SubmitField('Dodaj zadanie')
 
     def __init__(self, *args, **kwargs):
@@ -134,17 +141,19 @@ def teacher_dashboard():
 
     form = TaskForm()
     form.student_id.choices = [(student.id, f"{student.name} {student.surname}") for student in User.query.filter_by(role='student').all()]
-
     if form.validate_on_submit():
         new_task = Task(
             content=form.content.data, 
             student_id=form.student_id.data,
             teacher_id=current_user.id,
-            due_date=form.due_date.data
+            due_date=form.due_date.data,
+            max_points=form.max_points.data
         )
         db.session.add(new_task)
         db.session.commit()
         return redirect(url_for('teacher_dashboard'))
+    else:
+        print('Form errors:', form.errors)
 
     tasks = Task.query.filter_by(teacher_id=current_user.id).all()
     return render_template('teacher_dashboard.html', form=form, tasks=tasks)
@@ -161,9 +170,27 @@ def student_dashboard():
 @app.route('/task/complete/<int:task_id>', methods=['POST'])
 def mark_task_completed(task_id):
     task = Task.query.get(task_id)
-    if task:
-        task.completed = 1
-        db.session.commit()
+
+    if task and task.student_id == current_user.id:
+        answer = request.form.get('answer')
+        if answer:
+            task.answer = answer
+            task.sent_date = datetime.now()
+            task.completed = True 
+            db.session.commit()
+
+    return redirect(url_for('dashboard'))
+
+@app.route('/task/grade/<int:task_id>', methods=['POST'])
+def grade_task(task_id):
+    task = Task.query.get(task_id)
+
+    if task and task.teacher_id == current_user.id:
+        grade = request.form.get('grade')
+        if grade and (int)(grade) > 0 and (int)(grade) <= task.max_points:
+            task.grade = grade
+            db.session.commit()
+
     return redirect(url_for('dashboard'))
 
 if __name__ == '__main__':
