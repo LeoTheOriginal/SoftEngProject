@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from flask_wtf import FlaskForm
 from flask_bcrypt import Bcrypt
-from wtforms import StringField, PasswordField, SubmitField, SelectField
+from wtforms import StringField, PasswordField, SubmitField, SelectField, DateField
 from wtforms.validators import InputRequired, Length, ValidationError
 
 app = Flask(__name__)
@@ -29,13 +29,13 @@ class Task(db.Model):
     student_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     completed = db.Column(db.Boolean, default=False)
+    due_date = db.Column(db.DateTime, nullable=True)
 
     student = db.relationship('User', foreign_keys=[student_id], backref='tasks')
     teacher = db.relationship('User', foreign_keys=[teacher_id])
 
     def __repr__(self):
         return f'<Task {self.content} assigned by {self.teacher.name} to {self.student.name}>'
-
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -60,7 +60,6 @@ class RegisterForm(FlaskForm):
         existing_user_email = User.query.filter_by(email=email.data).first()
         if existing_user_email:
             raise ValidationError('Email already in use')
-    
 
 class LoginForm(FlaskForm):
     email = StringField('email', validators=[InputRequired(), Length(min=4, max=50)] , render_kw={"placeholder": "Email"})
@@ -70,6 +69,7 @@ class LoginForm(FlaskForm):
 class TaskForm(FlaskForm):
     content = StringField('Treść zadania', validators=[InputRequired(), Length(min=4, max=200)])
     student_id = SelectField('Wybierz ucznia', coerce=int, validators=[InputRequired()])
+    due_date = DateField('Termin wykonania', format='%Y-%m-%d', validators=[InputRequired()])
     submit = SubmitField('Dodaj zadanie')
 
     def __init__(self, *args, **kwargs):
@@ -139,7 +139,8 @@ def teacher_dashboard():
         new_task = Task(
             content=form.content.data, 
             student_id=form.student_id.data,
-            teacher_id=current_user.id
+            teacher_id=current_user.id,
+            due_date=form.due_date.data
         )
         db.session.add(new_task)
         db.session.commit()

@@ -17,6 +17,7 @@
                 <strong>{{ task.content }}</strong><br>
                 <em>Przypisane przez: {{ task.teacher.name }} {{ task.teacher.surname }}</em><br>
                 <em>Status: {% if task.completed %}Zakończone{% else %}Do wykonania{% endif %}</em><br>
+                <em>Termin wykonania: {{ task.due_date.strftime('%Y-%m-%d') }}</em><br>
                 {% if not task.completed %}
                     <form method="POST" action="{{ url_for('mark_task_completed', task_id=task.id) }}">
                         <button type="submit">Zakończ zadanie</button>

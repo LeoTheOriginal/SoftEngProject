@@ -22,6 +22,10 @@
             {{ form.student_id(class="form-control") }}
         </div>
         <div>
+            <label for="due_date">Termin wykonania:</label>
+            {{ form.due_date(class="form-control") }}
+        </div>
+        <div>
             <button type="submit">Przypisz zadanie</button>
         </div>
     </form>
@@ -33,6 +37,7 @@
                 <strong>{{ task.content }}</strong><br>
                 <em>Przypisane przez: {{ task.teacher.name }} {{ task.teacher.surname }}</em><br>
                 <em>Uczeń: {{ task.student.name }} {{ task.student.surname }}</em><br>
+                <em>Termin wykonania: {{ task.due_date.strftime('%Y-%m-%d') }}</em><br>
                 <em>Status: {% if task.completed %}Zakończone{% else %}Do wykonania{% endif %}</em><br>
             </li>
         {% endfor %}
