@@ -185,8 +185,6 @@ def teacher_dashboard():
             teacher_id=current_user.id,
             due_date=form.due_date.data,
             max_points=form.max_points.data
-            due_date=form.due_date.data,
-            max_points=form.max_points.data
         )
         db.session.add(new_task)
         db.session.commit()

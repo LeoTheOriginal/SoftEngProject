@@ -30,10 +30,6 @@
             {{ form.max_points(class="form-control") }}
         </div>
         <div>
-            <label for="max_points">Maksymalna ilość punktów:</label>
-            {{ form.max_points(class="form-control") }}
-        </div>
-        <div>
             <button type="submit">Przypisz zadanie</button>
         </div>
     </form>
@@ -47,7 +43,6 @@
                 <em>Uczeń: {{ task.student.name }} {{ task.student.surname }}</em><br>
                 <em>Termin wykonania: {{ task.due_date.strftime('%Y-%m-%d') }}</em><br>
                 <em>Maksymalna ilość punktów: {{ task.max_points }}</em><br>
-                <em>Maksymalna ilość punktów: {{ task.max_points }}</em><br>
                 <em>Status: {% if task.completed %}Zakończone{% else %}Do wykonania{% endif %}</em><br>
                 {% if task.completed %}
                     <p><strong>Odpowiedź ucznia:</strong> {{ task.answer }}</p>
@@ -55,7 +50,7 @@
                             <p style="color: red;"><strong>Przekroczono termin oddania!</strong></p>
                     {% endif %}
                     {% if task.file_path %}
-                    <p>Załącznik: <a href="{{ url_for('uploaded_file', filepath=task.file_path.split('uploads/')[1]) }}">Pobierz</a></p>
+                        <p>Załącznik: <a href="{{ url_for('uploaded_file', filepath=task.file_path.split('uploads/')[1]) }}">Pobierz</a></p>
                     {% endif %}
                     {% if task.grade %}
                         <p><strong>Ocena: </strong>{{ task.grade }}</p>
