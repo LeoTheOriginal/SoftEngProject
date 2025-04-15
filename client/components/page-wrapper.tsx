@@ -1,7 +1,7 @@
 export const PageWrapper = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className="w-full h-screen flex items-center justify-center bg-white gap">
+    <section className="w-screen h-screen flex items-center justify-center flex-1 bg-white ">
       {children}
-    </div>
+    </section>
   );
 };
