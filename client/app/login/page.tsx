@@ -2,15 +2,21 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { PageWrapper } from "@/components/page-wrapper";
+import { useAuth } from "@/context/auth-context";
+import { useRouter } from "next/navigation";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const { login, loading, error } = useAuth();
+  const router = useRouter();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login attempt:", { email, password });
+    const success = await login(email, password);
+    if (success) {
+      router.push("/dashboard");
+    }
   };
 
   return (
@@ -36,7 +42,7 @@ export default function Login() {
             placeholder="Podaj email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-3 py-2 border border-[#D9D9D9] rounded text-black focus:outline-none"
+            className="w-full px-3 py-2 border border-[#D9D9D9] rounded-lg text-black focus:outline-none"
             required
           />
         </div>
@@ -59,11 +65,14 @@ export default function Login() {
           />
         </div>
 
+        {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
+
         <button
           type="submit"
-          className="mt-4 py-2 px-4 bg-[#2C2C2C] text-white font-medium rounded-lg"
+          className="mt-4 py-2 px-4 bg-[#2C2C2C] text-white font-medium rounded-lg disabled:bg-gray-400"
+          disabled={loading}
         >
-          Zaloguj się
+          {loading ? "Logowanie..." : "Zaloguj się"}
         </button>
 
         <div className="text-center mt-4">

@@ -2,17 +2,24 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { PageWrapper } from "@/components/page-wrapper";
+import { useAuth } from "@/context/auth-context";
+import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [role, setRole] = useState("student");
+  const { register, loading, error } = useAuth();
+  const router = useRouter();
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Register attempt:", { email, password, firstName, lastName });
+    const success = await register(email, password, firstName, lastName, role);
+    if (success) {
+      router.push("/login");
+    }
   };
 
   return (
@@ -97,11 +104,33 @@ export default function RegisterPage() {
           />
         </div>
 
+        <div>
+          <label
+            htmlFor="role"
+            className="block text-black text-sm font-medium mb-1"
+          >
+            Rola
+          </label>
+          <select
+            id="role"
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            className="w-full px-3 py-2 border border-[#D9D9D9] rounded-lg text-black focus:outline-none"
+            required
+          >
+            <option value="student">Student</option>
+            <option value="teacher">Nauczyciel</option>
+          </select>
+        </div>
+
+        {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
+
         <button
           type="submit"
-          className="mt-4 py-2 px-4 bg-[#2C2C2C] text-white font-medium rounded"
+          className="mt-4 py-2 px-4 bg-[#2C2C2C] text-white font-medium rounded-lg disabled:bg-gray-400"
+          disabled={loading}
         >
-          Zarejestruj się
+          {loading ? "Rejestracja..." : "Zarejestruj się"}
         </button>
 
         <div className="text-center mt-4">
