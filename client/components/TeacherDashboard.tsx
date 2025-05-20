@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useApi } from "@/hooks/use-api";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 type Student = {
   id: number;
@@ -40,6 +41,7 @@ export const TeacherDashboard = ({ user }: { user: User }) => {
   });
 
   const { getStudents, getTasks, createTask, error: apiError } = useApi();
+  const router = useRouter();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -261,23 +263,20 @@ export const TeacherDashboard = ({ user }: { user: User }) => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left text-xs font-medium text-black uppercase tracking-wider">
                         Student
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left text-xs font-medium text-black uppercase tracking-wider">
                         Zadanie
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left text-xs font-medium text-black uppercase tracking-wider">
                         Termin
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left text-xs font-medium text-black uppercase tracking-wider">
                         Punkty
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left text-xs font-medium text-black uppercase tracking-wider">
                         Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                        Akcje
                       </th>
                     </tr>
                   </thead>
@@ -293,22 +292,33 @@ export const TeacherDashboard = ({ user }: { user: User }) => {
                         })();
 
                       return (
-                        <tr key={task.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-black">
+                        <tr
+                          key={task.id}
+                          className="cursor-pointer hover:bg-gray-50"
+                          onClick={() => router.push(`/task/${task.id}`)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              router.push(`/task/${task.id}`);
+                            }
+                          }}
+                          tabIndex={0}
+                          aria-label={`Zadanie dla ${studentName} - ${task.content}`}
+                        >
+                          <td className="px-4 py-3 whitespace-nowrap text-black">
                             {studentName}
                           </td>
-                          <td className="px-6 py-4 text-black">
+                          <td className="px-4 py-3 text-black truncate max-w-xs">
                             {task.content}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-black">
+                          <td className="px-4 py-3 whitespace-nowrap text-black">
                             {task.due_date}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-black">
+                          <td className="px-4 py-3 whitespace-nowrap text-black">
                             {task.max_points}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-3 whitespace-nowrap">
                             {task.answer ? (
-                              task.grade !== undefined ? (
+                              task.grade !== null ? (
                                 <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                                   Ocenione ({task.grade}/{task.max_points})
                                 </span>
@@ -322,14 +332,6 @@ export const TeacherDashboard = ({ user }: { user: User }) => {
                                 Oczekuje
                               </span>
                             )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <Link
-                              href={`/task/${task.id}`}
-                              className="text-[#2C2C2C] hover:underline"
-                            >
-                              Szczegóły
-                            </Link>
                           </td>
                         </tr>
                       );

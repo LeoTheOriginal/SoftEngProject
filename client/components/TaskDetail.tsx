@@ -57,8 +57,10 @@ export const TaskDetail = ({
           if (taskData.answer) {
             setAnswer(taskData.answer);
           }
-          if (taskData.grade !== undefined) {
+          if (taskData.grade !== null && taskData.grade !== undefined) {
             setGrade(taskData.grade);
+          } else {
+            setGrade("");
           }
           if (taskData.comment) {
             setComment(taskData.comment);
@@ -213,8 +215,8 @@ export const TaskDetail = ({
   const isStudent = user.role === "student";
   const isTeacher = user.role === "teacher";
   const canSubmitAnswer = isStudent && !task.answer;
-  const canEditAnswer = isStudent && task.answer && task.grade === undefined;
-  const canGrade = isTeacher && task.answer && task.grade === undefined;
+  const canEditAnswer = isStudent && task.answer && task.grade === null;
+  const canGrade = isTeacher && task.answer && task.grade === null;
 
   return (
     <div className="w-full h-full">
@@ -271,7 +273,7 @@ export const TaskDetail = ({
               <div>
                 <p className="text-sm font-medium text-gray-500">Status:</p>
                 {task.answer ? (
-                  task.grade !== undefined ? (
+                  task.grade !== null ? (
                     <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                       Ocenione ({task.grade}/{task.max_points})
                     </span>
@@ -349,7 +351,7 @@ export const TaskDetail = ({
               </div>
             )}
 
-            {canGrade && (
+            {isTeacher && task.answer && task.grade === null && (
               <div className="mb-6">
                 <h2 className="text-xl font-semibold mb-4 text-black">
                   Oceń zadanie
@@ -402,20 +404,23 @@ export const TaskDetail = ({
                       className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                       rows={3}
                       disabled={loading}
+                      placeholder="Wprowadź komentarz do oceny..."
                     />
                   </div>
-                  <button
-                    type="submit"
-                    className="bg-[#2C2C2C] text-white py-2 px-4 rounded-lg disabled:bg-gray-400"
-                    disabled={loading || grade === ""}
-                  >
-                    {loading ? "Zapisywanie..." : "Oceń zadanie"}
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      type="submit"
+                      className="bg-[#2C2C2C] text-white py-2 px-4 rounded-lg disabled:bg-gray-400"
+                      disabled={loading || grade === ""}
+                    >
+                      {loading ? "Zapisywanie..." : "Oceń zadanie"}
+                    </button>
+                  </div>
                 </form>
               </div>
             )}
 
-            {task.grade !== undefined && (
+            {task.grade !== null && (
               <div>
                 <h2 className="text-xl font-semibold mb-4 text-black">Ocena</h2>
                 <div className="p-4 bg-gray-50 rounded-md">
