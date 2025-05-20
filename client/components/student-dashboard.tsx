@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useApi } from "@/hooks/use-api";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 type Task = {
   id?: number;
@@ -30,6 +30,7 @@ export const StudentDashboard = ({ user }: { user: User }) => {
   const [answer, setAnswer] = useState("");
 
   const { getTasks, completeTask, error: apiError } = useApi();
+  const router = useRouter();
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -114,102 +115,108 @@ export const StudentDashboard = ({ user }: { user: User }) => {
   };
 
   return (
-    <div className="w-full h-full">
-      <h1 className="text-3xl text-black font-bold mb-6">Witaj, {user.name}</h1>
+    <div className="w-full min-h-screen flex flex-col">
+      <div className="flex-1 p-6">
+        <h1 className="text-3xl text-black font-bold mb-6">
+          Witaj, {user.name}
+        </h1>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-black p-4 rounded-lg mb-6">
-          <p>{error}</p>
-          <button
-            type="button"
-            onClick={handleRetry}
-            className="mt-2 text-sm underline text-black"
-          >
-            Spróbuj ponownie
-          </button>
-        </div>
-      )}
-
-      <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-        <h2 className="text-xl font-semibold mb-4 text-black">Twoje zadania</h2>
-
-        {loading ? (
-          <div className="flex justify-center items-center py-8">
-            <p className="text-black">Ładowanie zadań...</p>
-          </div>
-        ) : tasks.length === 0 ? (
-          <p className="text-black py-4">Nie masz przypisanych zadań</p>
-        ) : (
-          <div className="space-y-6 overflow-y-auto h-[calc(100vh-250px)]">
-            {tasks.map((task) => (
-              <div
-                key={task.id}
-                className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer"
-                onClick={() => redirect(`/task/${task.id}`)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    redirect(`/task/${task.id}`);
-                  }
-                }}
-                aria-label={`Zadanie: ${task.content}`}
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="font-medium text-black">{task.content}</p>
-                    <p className="text-sm text-black mt-1">
-                      Termin oddania: {task.due_date}
-                    </p>
-                    <p className="text-sm text-black">
-                      Maksymalna liczba punktów: {task.max_points}
-                    </p>
-                    {task.teacher_name && (
-                      <p className="text-sm text-black">
-                        Nauczyciel: {task.teacher_name}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    {task.answer ? (
-                      task.grade !== null ? (
-                        <div className="text-right">
-                          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                            Ocenione
-                          </span>
-                          <p className="mt-2 font-medium text-black">
-                            Ocena: {task.grade}/{task.max_points}
-                          </p>
-                          {task.comment && (
-                            <p className="text-sm text-black mt-1">
-                              Komentarz: {task.comment}
-                            </p>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                          Oddane - oczekuje na ocenę
-                        </span>
-                      )
-                    ) : (
-                      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                        Oczekuje na odpowiedź
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {task.answer && !task.grade && (
-                  <div className="mt-4 p-3 bg-gray-50 rounded-md">
-                    <p className="text-sm font-medium text-black">
-                      Twoja odpowiedź:
-                    </p>
-                    <p className="text-sm mt-1 text-black">{task.answer}</p>
-                  </div>
-                )}
-              </div>
-            ))}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-black p-4 rounded-lg mb-6">
+            <p>{error}</p>
+            <button
+              type="button"
+              onClick={handleRetry}
+              className="mt-2 text-sm underline text-black"
+            >
+              Spróbuj ponownie
+            </button>
           </div>
         )}
+
+        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+          <h2 className="text-xl font-semibold mb-4 text-black">
+            Twoje zadania
+          </h2>
+
+          {loading ? (
+            <div className="flex justify-center items-center py-8">
+              <p className="text-black">Ładowanie zadań...</p>
+            </div>
+          ) : tasks.length === 0 ? (
+            <p className="text-black py-4">Nie masz przypisanych zadań</p>
+          ) : (
+            <div className="space-y-6">
+              {tasks.map((task) => (
+                <div
+                  key={task.id}
+                  className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                  onClick={() => router.push(`/task/${task.id}`)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      router.push(`/task/${task.id}`);
+                    }
+                  }}
+                  aria-label={`Zadanie: ${task.content}`}
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-medium text-black">{task.content}</p>
+                      <p className="text-sm text-black mt-1">
+                        Termin oddania: {task.due_date}
+                      </p>
+                      <p className="text-sm text-black">
+                        Maksymalna liczba punktów: {task.max_points}
+                      </p>
+                      {task.teacher_name && (
+                        <p className="text-sm text-black">
+                          Nauczyciel: {task.teacher_name}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      {task.answer ? (
+                        task.grade !== null ? (
+                          <div className="text-right">
+                            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                              Ocenione
+                            </span>
+                            <p className="mt-2 font-medium text-black">
+                              Ocena: {task.grade}/{task.max_points}
+                            </p>
+                            {task.comment && (
+                              <p className="text-sm text-black mt-1">
+                                Komentarz: {task.comment}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                            Oddane - oczekuje na ocenę
+                          </span>
+                        )
+                      ) : (
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                          Oczekuje na odpowiedź
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {task.answer && !task.grade && (
+                    <div className="mt-4 p-3 bg-gray-50 rounded-md">
+                      <p className="text-sm font-medium text-black">
+                        Twoja odpowiedź:
+                      </p>
+                      <p className="text-sm mt-1 text-black">{task.answer}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {selectedTask && (

@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useParams, redirect } from "next/navigation";
-import { TaskDetail } from "@/components/TaskDetail";
+import { TaskDetail } from "@/components/task-details";
 import { useAuth } from "@/context/auth-context";
-import { SharedLayout } from "@/components/SharedLayout";
+import { SharedLayout } from "@/components/shared-layout";
 
 type User = {
   id: number;

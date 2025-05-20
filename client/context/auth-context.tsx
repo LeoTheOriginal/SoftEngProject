@@ -44,7 +44,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   } = useApi();
   const router = useRouter();
 
-  // Próba odtworzenia sesji z localStorage przy ładowaniu
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {

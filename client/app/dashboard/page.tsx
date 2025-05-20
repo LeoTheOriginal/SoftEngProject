@@ -3,9 +3,9 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
-import { TeacherDashboard } from "@/components/TeacherDashboard";
-import { StudentDashboard } from "@/components/StudentDashboard";
-import { SharedLayout } from "@/components/SharedLayout";
+import { TeacherDashboard } from "@/components/teacher-dashboard";
+import { StudentDashboard } from "@/components/student-dashboard";
+import { SharedLayout } from "@/components/shared-layout";
 
 export default function Dashboard() {
   const { user } = useAuth();
