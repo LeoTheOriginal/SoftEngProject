@@ -107,31 +107,28 @@ def register():
     log_action(new_user.id, "Registered")
     return jsonify({"message": "User registered successfully"}), 201
 
-@app.route('/logout')
-@login_required
+@app.route('/logout', methods=['POST'])
 def logout():
     logout_user()
-    log_action(current_user.id, "Logged out")
     return jsonify({"message": "Logout successful"}), 200
 
 @app.route('/students', methods=['GET'])
-@login_required
 def get_students():
-    if current_user.role != 'teacher':
-        log_action(current_user.id, "Unauthorized access to students list")
-        return jsonify({"message": "Unauthorized"}), 403
-
     students = User.query.filter_by(role='student').all()
     student_list = [{"id": student.id, "name": f"{student.name} {student.surname}"} for student in students]
-    log_action(current_user.id, "Fetched students list")
     return jsonify(student_list)
 
 @app.route('/tasks', methods=['GET'])
-@login_required
 def get_tasks():
+    user_id = request.args.get('user_id')
+    role = request.args.get('role')
     task_list = []
-    if current_user.role == 'teacher':
-        tasks = Task.query.filter_by(teacher_id=current_user.id).all()
+    
+    if not user_id or not role:
+        return jsonify({"message": "Missing user_id or role parameter"}), 400
+        
+    if role == 'teacher':
+        tasks = Task.query.filter_by(teacher_id=user_id).all()
         task_list = [{
         "id": task.id,
         "content": task.content,
@@ -143,9 +140,8 @@ def get_tasks():
         "file_path": task.file_path if task.file_path else None,
         "student_name": f"{task.student.name} {task.student.surname}"
     } for task in tasks]
-        log_action(current_user.id, "Fetched tasks list as teacher")
-    elif current_user.role == 'student':
-        tasks = Task.query.filter_by(student_id=current_user.id).all()
+    elif role == 'student':
+        tasks = Task.query.filter_by(student_id=user_id).all()
         task_list = [{
         "id": task.id,
         "content": task.content,
@@ -157,85 +153,91 @@ def get_tasks():
         "file_path": task.file_path if task.file_path else None,
         "teacher_name": f"{task.teacher.name} {task.teacher.surname}"
     } for task in tasks]
-        log_action(current_user.id, "Fetched tasks list as student")
     else:
-        log_action(current_user.id, "Unauthorized access to tasks list")
-        return jsonify({"message": "Unauthorized"}), 403
+        return jsonify({"message": "Invalid role"}), 400
 
     return jsonify(task_list)
 
 @app.route('/tasks', methods=['POST'])
-@login_required
 def create_task():
-    if current_user.role != 'teacher':
-        log_action(current_user.id, "Unauthorized task creation attempt")
-        return jsonify({"message": "Unauthorized"}), 403
-
     data = request.json
+    teacher_id = data.get('teacher_id')
+    
+    if not teacher_id:
+        return jsonify({"message": "Missing teacher_id parameter"}), 400
+
+    teacher = User.query.filter_by(id=teacher_id, role='teacher').first()
+    if not teacher:
+        return jsonify({"message": "Teacher not found"}), 404
 
     student = User.query.filter_by(id=data['student_id'], role='student').first()
     if not student:
-        log_action(current_user.id, "Task creation failed - student not found")
         return jsonify({"message": "Student not found"}), 404
 
     new_task = Task(
         content=data['content'],
         student_id=data['student_id'],
-        teacher_id=current_user.id,
+        teacher_id=teacher_id,
         due_date=datetime.strptime(data['due_date'], "%Y-%m-%d"),
         max_points=data['max_points']
     )
     db.session.add(new_task)
     db.session.commit()
-    log_action(current_user.id, f"Created task - task_id = {new_task.id} for student {student.name} {student.surname}")
     return jsonify({"message": "Task created successfully"}), 201
 
 @app.route('/task/complete/<int:task_id>', methods=['POST'])
-@login_required
 def mark_task_completed(task_id):
-    task = Task.query.get(task_id)
-    if not task or task.student_id != current_user.id:
-        log_action(current_user.id, "Unauthorized task completion attempt")
-        return jsonify({"message": "Unauthorized"}), 403
-
     data = request.json
+    student_id = data.get('student_id')
+    
+    if not student_id:
+        return jsonify({"message": "Missing student_id parameter"}), 400
+        
+    task = Task.query.get(task_id)
+    if not task or task.student_id != int(student_id):
+        return jsonify({"message": "Unauthorized or task not found"}), 403
+
     if not data.get('answer'):
-        log_action(current_user.id, "Task completion failed - answer not provided")
         return jsonify({"message": "Answer is required"}), 400
+        
     task.answer = data.get('answer', None)
     task.sent_date = datetime.now()
     task.completed = True
 
     db.session.commit()
-    log_action(current_user.id, f"Task marked as completed - task_id = {task.id}")
     return jsonify({"message": "Task marked as completed"}), 200
 
 @app.route('/task/grade/<int:task_id>', methods=['POST'])
-@login_required
 def grade_task(task_id):
-    task = Task.query.get(task_id)
-    if not task or task.teacher_id != current_user.id:
-        log_action(current_user.id, "Unauthorized task grading attempt")
-        return jsonify({"message": "Unauthorized"}), 403
-
     data = request.json
+    teacher_id = data.get('teacher_id')
+    
+    if not teacher_id:
+        return jsonify({"message": "Missing teacher_id parameter"}), 400
+        
+    task = Task.query.get(task_id)
+    if not task or task.teacher_id != int(teacher_id):
+        return jsonify({"message": "Unauthorized or task not found"}), 403
+
     grade = data.get('grade')
     comment = data.get('comment')
     if grade and 0 < int(grade) <= task.max_points and task.completed:
         task.grade = int(grade)
         task.comment = comment if comment else None
         db.session.commit()
-        log_action(current_user.id, f"Task graded - task_id = {task.id}, grade = {task.grade}")
         return jsonify({"message": "Task graded successfully"}), 200
 
-    log_action(current_user.id, "Task grading failed - invalid grade or task not completed")
     return jsonify({"message": "Invalid action"}), 400
 
 @app.route('/logs', methods=['GET'])
-@login_required
 def get_logs():
-    if current_user.role != 'admin':
-        log_action(current_user.id, "Unauthorized access to logs")
+    admin_id = request.args.get('admin_id')
+    
+    if not admin_id:
+        return jsonify({"message": "Missing admin_id parameter"}), 400
+        
+    admin = User.query.filter_by(id=admin_id, role='admin').first()
+    if not admin:
         return jsonify({"message": "Unauthorized"}), 403
 
     logs = Log.query.order_by(Log.timestamp.desc()).all()
@@ -246,31 +248,28 @@ def get_logs():
         "timestamp": log.timestamp.strftime("%Y-%m-%d %H:%M:%S")
     } for log in logs]
 
-    log_action(current_user.id, "Fetched logs list")
     return jsonify(log_list)
 
 @app.route('/upload/<int:task_id>', methods=['POST'])
 def upload_file(task_id):
-    if current_user.role != 'student':
-        log_action(current_user.id, "Unauthorized file upload attempt")
-        return jsonify({"message": "Unauthorized"}), 403
+    student_id = request.form.get('student_id')
+    
+    if not student_id:
+        return jsonify({"message": "Missing student_id parameter"}), 400
     
     if 'file' not in request.files:
-        log_action(current_user.id, "File upload failed - no file part")
         return jsonify({"message": "No file part"}), 400
 
     file = request.files['file']
     if file.filename == '':
-        log_action(current_user.id, "File upload failed - no selected file")
         return jsonify({"message": "No selected file"}), 400
 
-    task = Task.query.filter_by(id=task_id, student_id=current_user.id).first()
+    task = Task.query.filter_by(id=task_id, student_id=student_id).first()
     if not task:
-        log_action(current_user.id, "File upload failed - task not found or not assigned to user")
         return jsonify({"message": "Task not found or not assigned to you"}), 404
 
     if file and allowed_file(file.filename):
-        filename = secure_filename(f"{task_id}_{current_user.id}_{file.filename}")
+        filename = secure_filename(f"{task_id}_{student_id}_{file.filename}")
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         
         os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -279,15 +278,48 @@ def upload_file(task_id):
 
         task.file_path = file_path
         db.session.commit()
-        log_action(current_user.id, f"File uploaded for task_id = {task.id}, filename = {filename}")
         return jsonify({"message": "File uploaded", "filename": filename}), 200
 
-    log_action(current_user.id, "File upload failed - invalid file type")
     return jsonify({"message": "Invalid file type"}), 400
 
 @app.route('/uploads/<path:filepath>')
 def uploaded_file(filepath):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filepath, as_attachment=True)
+
+@app.route('/task/<int:task_id>', methods=['GET'])
+def get_task_details(task_id):
+    user_id = request.args.get('user_id')
+    role = request.args.get('role')
+    
+    if not user_id or not role:
+        return jsonify({"message": "Missing user_id or role parameter"}), 400
+    
+    task = Task.query.get(task_id)
+    if not task:
+        return jsonify({"message": "Task not found"}), 404
+    
+    if (role == 'teacher' and task.teacher_id != int(user_id)) or \
+       (role == 'student' and task.student_id != int(user_id)):
+        return jsonify({"message": "Unauthorized access"}), 403
+    
+    task_data = {
+        "id": task.id,
+        "content": task.content,
+        "student_id": task.student_id,
+        "teacher_id": task.teacher_id,
+        "due_date": task.due_date.strftime("%Y-%m-%d") if task.due_date else None,
+        "sent_date": task.sent_date.strftime("%Y-%m-%d %H:%M:%S") if task.sent_date else None,
+        "answer": task.answer,
+        "completed": task.completed,
+        "max_points": task.max_points,
+        "grade": task.grade,
+        "comment": task.comment,
+        "file_path": task.file_path,
+        "student_name": f"{task.student.name} {task.student.surname}",
+        "teacher_name": f"{task.teacher.name} {task.teacher.surname}"
+    }
+    
+    return jsonify(task_data)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS

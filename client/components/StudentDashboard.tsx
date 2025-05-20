@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useApi } from "@/hooks/use-api";
+import Link from "next/link";
 
 type Task = {
   id?: number;
@@ -12,6 +13,7 @@ type Task = {
   answer?: string;
   grade?: number;
   comment?: string;
+  teacher_name?: string;
 };
 
 type User = {
@@ -35,14 +37,13 @@ export const StudentDashboard = ({ user }: { user: User }) => {
       setError(null);
 
       try {
+        console.log("Zalogowany użytkownik:", user);
+        console.log("Pobieranie zadań dla studenta z ID:", user.id);
         const tasksData = await getTasks();
+        console.log("Otrzymane dane zadań:", tasksData);
 
         if (tasksData) {
-          // Filtruj zadania przypisane do tego studenta
-          const studentTasks = tasksData.filter(
-            (task) => task.student_id === user.id
-          );
-          setTasks(studentTasks);
+          setTasks(tasksData);
         }
       } catch (err) {
         setError("Nie udało się pobrać zadań. Spróbuj ponownie później.");
@@ -53,9 +54,8 @@ export const StudentDashboard = ({ user }: { user: User }) => {
     };
 
     fetchTasks();
-  }, [getTasks, user.id]);
+  }, [getTasks, user]);
 
-  // Aktualizacja błędu z API
   useEffect(() => {
     if (apiError) {
       setError(apiError);
@@ -77,10 +77,7 @@ export const StudentDashboard = ({ user }: { user: User }) => {
         const tasksData = await getTasks();
 
         if (tasksData) {
-          const studentTasks = tasksData.filter(
-            (task) => task.student_id === user.id
-          );
-          setTasks(studentTasks);
+          setTasks(tasksData);
         }
 
         setSelectedTask(null);
@@ -103,10 +100,7 @@ export const StudentDashboard = ({ user }: { user: User }) => {
         const tasksData = await getTasks();
 
         if (tasksData) {
-          const studentTasks = tasksData.filter(
-            (task) => task.student_id === user.id
-          );
-          setTasks(studentTasks);
+          setTasks(tasksData);
         }
       } catch (err) {
         setError("Nie udało się pobrać zadań. Spróbuj ponownie później.");
@@ -120,16 +114,16 @@ export const StudentDashboard = ({ user }: { user: User }) => {
   };
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-6">Witaj, {user.name}</h1>
+    <div className="w-full h-full">
+      <h1 className="text-3xl text-black font-bold mb-6">Witaj, {user.name}</h1>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6">
+        <div className="bg-red-50 border border-red-200 text-black p-4 rounded-lg mb-6">
           <p>{error}</p>
           <button
             type="button"
             onClick={handleRetry}
-            className="mt-2 text-sm underline"
+            className="mt-2 text-sm underline text-black"
           >
             Spróbuj ponownie
           </button>
@@ -137,16 +131,16 @@ export const StudentDashboard = ({ user }: { user: User }) => {
       )}
 
       <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-        <h2 className="text-xl font-semibold mb-4">Twoje zadania</h2>
+        <h2 className="text-xl font-semibold mb-4 text-black">Twoje zadania</h2>
 
         {loading ? (
           <div className="flex justify-center items-center py-8">
-            <p>Ładowanie zadań...</p>
+            <p className="text-black">Ładowanie zadań...</p>
           </div>
         ) : tasks.length === 0 ? (
-          <p className="text-gray-500 py-4">Nie masz przypisanych zadań</p>
+          <p className="text-black py-4">Nie masz przypisanych zadań</p>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-6 overflow-y-auto h-[calc(100vh-250px)]">
             {tasks.map((task) => (
               <div
                 key={task.id}
@@ -154,13 +148,23 @@ export const StudentDashboard = ({ user }: { user: User }) => {
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="font-medium">{task.content}</h3>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <Link
+                      href={`/task/${task.id}`}
+                      className="font-medium text-black hover:underline"
+                    >
+                      {task.content}
+                    </Link>
+                    <p className="text-sm text-black mt-1">
                       Termin oddania: {task.due_date}
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-black">
                       Maksymalna liczba punktów: {task.max_points}
                     </p>
+                    {task.teacher_name && (
+                      <p className="text-sm text-black">
+                        Nauczyciel: {task.teacher_name}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -170,11 +174,11 @@ export const StudentDashboard = ({ user }: { user: User }) => {
                           <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                             Ocenione
                           </span>
-                          <p className="mt-2 font-medium">
+                          <p className="mt-2 font-medium text-black">
                             Ocena: {task.grade}/{task.max_points}
                           </p>
                           {task.comment && (
-                            <p className="text-sm text-gray-600 mt-1">
+                            <p className="text-sm text-black mt-1">
                               Komentarz: {task.comment}
                             </p>
                           )}
@@ -185,22 +189,24 @@ export const StudentDashboard = ({ user }: { user: User }) => {
                         </span>
                       )
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() => setSelectedTask(task)}
-                        className="bg-[#2C2C2C] text-white py-2 px-4 rounded-lg disabled:bg-gray-400"
-                        disabled={loading}
-                      >
-                        Prześlij rozwiązanie
-                      </button>
+                      <div className="flex space-x-2">
+                        <Link
+                          href={`/task/${task.id}`}
+                          className="bg-[#2C2C2C] text-white py-2 px-4 rounded-lg disabled:bg-gray-400"
+                        >
+                          Prześlij rozwiązanie
+                        </Link>
+                      </div>
                     )}
                   </div>
                 </div>
 
                 {task.answer && !task.grade && (
                   <div className="mt-4 p-3 bg-gray-50 rounded-md">
-                    <p className="text-sm font-medium">Twoja odpowiedź:</p>
-                    <p className="text-sm mt-1">{task.answer}</p>
+                    <p className="text-sm font-medium text-black">
+                      Twoja odpowiedź:
+                    </p>
+                    <p className="text-sm mt-1 text-black">{task.answer}</p>
                   </div>
                 )}
               </div>
@@ -211,15 +217,15 @@ export const StudentDashboard = ({ user }: { user: User }) => {
 
       {selectedTask && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-lg w-full">
-            <h3 className="text-xl font-semibold mb-4">Prześlij rozwiązanie</h3>
-            <p className="mb-4">{selectedTask.content}</p>
-
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-xl font-semibold mb-4 text-black">
+              Prześlij rozwiązanie
+            </h3>
             <form onSubmit={handleSubmitAnswer} className="space-y-4">
               <div>
                 <label
                   htmlFor="answer"
-                  className="block text-sm font-medium mb-1"
+                  className="block text-sm font-medium mb-1 text-black"
                 >
                   Twoja odpowiedź
                 </label>
@@ -227,21 +233,21 @@ export const StudentDashboard = ({ user }: { user: User }) => {
                   id="answer"
                   value={answer}
                   onChange={(e) => setAnswer(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-black"
                   rows={5}
                   required
                   disabled={loading}
                 />
               </div>
 
-              <div className="flex justify-end space-x-3">
+              <div className="flex justify-end space-x-2">
                 <button
                   type="button"
                   onClick={() => {
                     setSelectedTask(null);
                     setAnswer("");
                   }}
-                  className="border border-gray-300 bg-white text-gray-700 py-2 px-4 rounded-lg"
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-black"
                   disabled={loading}
                 >
                   Anuluj
@@ -249,9 +255,9 @@ export const StudentDashboard = ({ user }: { user: User }) => {
                 <button
                   type="submit"
                   className="bg-[#2C2C2C] text-white py-2 px-4 rounded-lg disabled:bg-gray-400"
-                  disabled={loading || !answer.trim()}
+                  disabled={loading || !answer}
                 >
-                  {loading ? "Wysyłanie..." : "Prześlij"}
+                  {loading ? "Wysyłanie..." : "Wyślij"}
                 </button>
               </div>
             </form>
