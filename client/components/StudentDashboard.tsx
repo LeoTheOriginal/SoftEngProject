@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useApi } from "@/hooks/use-api";
-import Link from "next/link";
+import { redirect } from "next/navigation";
 
 type Task = {
   id?: number;
@@ -144,16 +144,18 @@ export const StudentDashboard = ({ user }: { user: User }) => {
             {tasks.map((task) => (
               <div
                 key={task.id}
-                className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                onClick={() => redirect(`/task/${task.id}`)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    redirect(`/task/${task.id}`);
+                  }
+                }}
+                aria-label={`Zadanie: ${task.content}`}
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <Link
-                      href={`/task/${task.id}`}
-                      className="font-medium text-black hover:underline"
-                    >
-                      {task.content}
-                    </Link>
+                    <p className="font-medium text-black">{task.content}</p>
                     <p className="text-sm text-black mt-1">
                       Termin oddania: {task.due_date}
                     </p>
@@ -169,7 +171,7 @@ export const StudentDashboard = ({ user }: { user: User }) => {
 
                   <div>
                     {task.answer ? (
-                      task.grade !== undefined ? (
+                      task.grade !== null ? (
                         <div className="text-right">
                           <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                             Ocenione
@@ -189,14 +191,9 @@ export const StudentDashboard = ({ user }: { user: User }) => {
                         </span>
                       )
                     ) : (
-                      <div className="flex space-x-2">
-                        <Link
-                          href={`/task/${task.id}`}
-                          className="bg-[#2C2C2C] text-white py-2 px-4 rounded-lg disabled:bg-gray-400"
-                        >
-                          Prześlij rozwiązanie
-                        </Link>
-                      </div>
+                      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                        Oczekuje na odpowiedź
+                      </span>
                     )}
                   </div>
                 </div>

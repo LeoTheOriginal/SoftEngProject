@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { TeacherDashboard } from "@/components/TeacherDashboard";
 import { StudentDashboard } from "@/components/StudentDashboard";
+import { SharedLayout } from "@/components/SharedLayout";
 
 export default function Dashboard() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -21,27 +22,12 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="p-8 min-h-screen w-full">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl text-black font-bold">
-            Platforma e-learningowa
-          </h1>
-          <button
-            onClick={logout}
-            className="bg-[#2C2C2C] text-white py-2 px-4 rounded-lg"
-            type="button"
-          >
-            Wyloguj
-          </button>
-        </div>
-
-        {user.role === "teacher" ? (
-          <TeacherDashboard user={user} />
-        ) : (
-          <StudentDashboard user={user} />
-        )}
-      </div>
-    </div>
+    <SharedLayout>
+      {user.role === "teacher" ? (
+        <TeacherDashboard user={user} />
+      ) : (
+        <StudentDashboard user={user} />
+      )}
+    </SharedLayout>
   );
 }
