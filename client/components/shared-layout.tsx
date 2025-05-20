@@ -1,5 +1,5 @@
-import { ReactNode } from "react";
-import { Header } from "./Header";
+import type { ReactNode } from "react";
+import { Header } from "./header";
 import { useAuth } from "@/context/auth-context";
 
 type SharedLayoutProps = {
