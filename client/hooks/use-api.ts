@@ -9,6 +9,7 @@ type ApiOptions = {
   body?: Record<string, unknown> | FormData;
   headers?: Record<string, string>;
   credentials?: RequestCredentials;
+  queryParams?: Record<string, string>;
 };
 
 type AuthData = {
@@ -23,16 +24,43 @@ type Task = {
   id?: number;
   content?: string;
   student_id?: number;
+  teacher_id?: number;
   due_date?: string;
+  sent_date?: string;
+  completed?: boolean;
   max_points?: number;
   answer?: string;
   grade?: number;
   comment?: string;
+  file_path?: string;
+  student_name?: string;
+  teacher_name?: string;
+};
+
+type User = {
+  id: number;
+  name: string;
+  role: string;
+};
+
+type LogEntry = {
+  id: number;
+  user: string;
+  action: string;
+  timestamp: string;
 };
 
 export const useApi = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    if (typeof window !== "undefined") {
+      const savedUser = localStorage.getItem("user");
+      console.log("Inicjalizacja użytkownika z localStorage:", savedUser);
+      return savedUser ? JSON.parse(savedUser) : null;
+    }
+    return null;
+  });
 
   const fetchApi = useCallback(
     async <T>(
@@ -44,11 +72,28 @@ export const useApi = () => {
         body,
         headers = {},
         credentials = "include",
+        queryParams = {},
       } = options;
 
       try {
         setLoading(true);
         setError(null);
+
+        let url = `${API_URL}${endpoint}`;
+
+        if (Object.keys(queryParams).length > 0) {
+          const params = new URLSearchParams();
+          for (const [key, value] of Object.entries(queryParams)) {
+            if (value) params.append(key, value);
+          }
+          url += `?${params.toString()}`;
+        }
+
+        console.log(`Wykonuję zapytanie do: ${url}`, {
+          method,
+          body,
+          queryParams,
+        });
 
         const requestOptions: RequestInit = {
           method,
@@ -64,26 +109,23 @@ export const useApi = () => {
           requestOptions.body = JSON.stringify(body);
         }
 
-        const response = await fetch(`${API_URL}${endpoint}`, requestOptions);
+        const response = await fetch(url, requestOptions);
 
         if (!response.ok) {
-          try {
-            const errorData = await response.json();
-            throw new Error(
-              errorData.message || `Błąd HTTP: ${response.status}`
-            );
-          } catch (jsonError) {
-            throw new Error(`Błąd HTTP: ${response.status}`);
-          }
+          const errorData = await response
+            .json()
+            .catch(() => ({ message: `Błąd HTTP: ${response.status}` }));
+          throw new Error(errorData.message || `Błąd HTTP: ${response.status}`);
         }
 
         const data = await response.json();
+        console.log(`Odpowiedź z ${endpoint}:`, data);
         return data as T;
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Nieznany błąd";
         setError(errorMessage);
-        console.error("API Error:", err);
+        console.error(`API Error (${endpoint}):`, err);
         return null;
       } finally {
         setLoading(false);
@@ -94,13 +136,24 @@ export const useApi = () => {
 
   const login = useCallback(
     async (credentials: { email: string; password: string }) => {
-      return fetchApi<{
+      const result = await fetchApi<{
         message: string;
         user: { id: number; name: string; role: string };
       }>("/login", {
         method: "POST",
         body: credentials,
       });
+
+      if (result?.user) {
+        console.log("Zapisuję dane użytkownika:", result.user);
+        setUser(result.user);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("user", JSON.stringify(result.user));
+          console.log("Dane użytkownika zapisane w localStorage");
+        }
+      }
+
+      return result;
     },
     [fetchApi]
   );
@@ -116,61 +169,100 @@ export const useApi = () => {
   );
 
   const logout = useCallback(async () => {
-    return fetchApi<{ message: string }>("/logout");
+    const result = await fetchApi<{ message: string }>("/logout", {
+      method: "POST",
+    });
+
+    if (result) {
+      setUser(null);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("user");
+      }
+    }
+
+    return result;
   }, [fetchApi]);
 
   const getTasks = useCallback(async () => {
+    if (!user) {
+      console.error("Nie można pobrać zadań - brak zalogowanego użytkownika");
+      return [];
+    }
+
+    console.log("Pobieranie zadań dla użytkownika:", user);
+
     try {
-      return await fetchApi<Task[]>("/tasks");
+      return await fetchApi<Task[]>("/tasks", {
+        queryParams: {
+          user_id: user.id.toString(),
+          role: user.role,
+        },
+      });
     } catch (err) {
       console.error("Error fetching tasks:", err);
       return [];
     }
-  }, [fetchApi]);
+  }, [fetchApi, user]);
 
   const createTask = useCallback(
     async (taskData: Task) => {
+      if (!user) return null;
+
       try {
         return await fetchApi<{ message: string }>("/tasks", {
           method: "POST",
-          body: taskData as Record<string, unknown>,
+          body: {
+            ...taskData,
+            teacher_id: user.id,
+          } as Record<string, unknown>,
         });
       } catch (err) {
         console.error("Error creating task:", err);
         return null;
       }
     },
-    [fetchApi]
+    [fetchApi, user]
   );
 
   const completeTask = useCallback(
     async (taskId: number, answer: string) => {
+      if (!user) return null;
+
       try {
         return await fetchApi<{ message: string }>(`/task/complete/${taskId}`, {
           method: "POST",
-          body: { answer },
+          body: {
+            answer,
+            student_id: user.id,
+          },
         });
       } catch (err) {
         console.error("Error completing task:", err);
         return null;
       }
     },
-    [fetchApi]
+    [fetchApi, user]
   );
 
   const gradeTask = useCallback(
     async (taskId: number, grade: number, comment?: string) => {
+      if (!user) return null;
+
       try {
         return await fetchApi<{ message: string }>(`/task/grade/${taskId}`, {
           method: "POST",
-          body: { grade, comment },
+          body: {
+            grade,
+            comment,
+            teacher_id: user.id,
+          },
         });
       } catch (err) {
         console.error("Error grading task:", err);
         return null;
       }
     },
-    [fetchApi]
+    [fetchApi, user]
   );
 
   const getStudents = useCallback(async () => {
@@ -182,45 +274,83 @@ export const useApi = () => {
     }
   }, [fetchApi]);
 
-  const uploadFile = useCallback(async (taskId: number, file: File) => {
-    const formData = new FormData();
-    formData.append("file", file);
+  const uploadFile = useCallback(
+    async (taskId: number, file: File) => {
+      if (!user) return null;
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("student_id", user.id.toString());
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await fetch(`${API_URL}/upload/${taskId}`, {
+          method: "POST",
+          credentials: "include",
+          mode: "cors",
+          body: formData,
+        });
+
+        const data = await response.json();
+        return data;
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Nieznany błąd";
+        setError(errorMessage);
+        console.error("Upload Error:", err);
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [user]
+  );
+
+  const getLogs = useCallback(async () => {
+    if (!user || user.role !== "admin") return [];
 
     try {
-      setLoading(true);
-      setError(null);
-
-      const response = await fetch(`${API_URL}/upload/${taskId}`, {
-        method: "POST",
-        credentials: "include",
-        mode: "cors",
-        body: formData,
+      return await fetchApi<LogEntry[]>("/logs", {
+        queryParams: {
+          admin_id: user.id.toString(),
+        },
       });
+    } catch (err) {
+      console.error("Error fetching logs:", err);
+      return [];
+    }
+  }, [fetchApi, user]);
 
-      if (!response.ok) {
-        try {
-          const errorData = await response.json();
-          throw new Error(errorData.message || `Błąd HTTP: ${response.status}`);
-        } catch (jsonError) {
-          throw new Error(`Błąd HTTP: ${response.status}`);
-        }
+  const getTaskDetails = useCallback(
+    async (taskId: number) => {
+      if (!user) {
+        console.error(
+          "Nie można pobrać szczegółów zadania - brak zalogowanego użytkownika"
+        );
+        return null;
       }
 
-      const data = await response.json();
-      return data;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Nieznany błąd";
-      setError(errorMessage);
-      console.error("Upload Error:", err);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      try {
+        return await fetchApi<Task>(`/task/${taskId}`, {
+          queryParams: {
+            user_id: user.id.toString(),
+            role: user.role,
+          },
+        });
+      } catch (err) {
+        console.error("Error fetching task details:", err);
+        return null;
+      }
+    },
+    [fetchApi, user]
+  );
 
   return {
     loading,
     error,
+    user,
     login,
     register,
     logout,
@@ -230,5 +360,7 @@ export const useApi = () => {
     gradeTask,
     getStudents,
     uploadFile,
+    getLogs,
+    getTaskDetails,
   };
 };

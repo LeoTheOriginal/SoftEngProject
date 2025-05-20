@@ -21,9 +21,12 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="p-8 min-h-screen bg-gray-50">
+    <div className="p-8 min-h-screen w-full">
       <div className="max-w-6xl mx-auto">
-        <div className="flex justify-end items-center mb-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl text-black font-bold">
+            Platforma e-learningowa
+          </h1>
           <button
             onClick={logout}
             className="bg-[#2C2C2C] text-white py-2 px-4 rounded-lg"
