@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 
-const API_URL = "http://localhost:5000";
+const API_URL = "http://127.0.0.1:5000";
 
 type ApiOptions = {
   method?: "GET" | "POST" | "PUT" | "DELETE";
@@ -57,6 +57,7 @@ export const useApi = () => {
             "Content-Type": "application/json",
             ...headers,
           },
+          mode: "cors",
         };
 
         if (body) {
@@ -64,19 +65,25 @@ export const useApi = () => {
         }
 
         const response = await fetch(`${API_URL}${endpoint}`, requestOptions);
-        const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(
-            data.message || "Wystąpił błąd podczas komunikacji z serwerem"
-          );
+          try {
+            const errorData = await response.json();
+            throw new Error(
+              errorData.message || `Błąd HTTP: ${response.status}`
+            );
+          } catch (jsonError) {
+            throw new Error(`Błąd HTTP: ${response.status}`);
+          }
         }
 
+        const data = await response.json();
         return data as T;
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Nieznany błąd";
         setError(errorMessage);
+        console.error("API Error:", err);
         return null;
       } finally {
         setLoading(false);
@@ -113,41 +120,66 @@ export const useApi = () => {
   }, [fetchApi]);
 
   const getTasks = useCallback(async () => {
-    return fetchApi<Task[]>("/tasks");
+    try {
+      return await fetchApi<Task[]>("/tasks");
+    } catch (err) {
+      console.error("Error fetching tasks:", err);
+      return [];
+    }
   }, [fetchApi]);
 
   const createTask = useCallback(
     async (taskData: Task) => {
-      return fetchApi<{ message: string }>("/tasks", {
-        method: "POST",
-        body: taskData as Record<string, unknown>,
-      });
+      try {
+        return await fetchApi<{ message: string }>("/tasks", {
+          method: "POST",
+          body: taskData as Record<string, unknown>,
+        });
+      } catch (err) {
+        console.error("Error creating task:", err);
+        return null;
+      }
     },
     [fetchApi]
   );
 
   const completeTask = useCallback(
     async (taskId: number, answer: string) => {
-      return fetchApi<{ message: string }>(`/task/complete/${taskId}`, {
-        method: "POST",
-        body: { answer },
-      });
+      try {
+        return await fetchApi<{ message: string }>(`/task/complete/${taskId}`, {
+          method: "POST",
+          body: { answer },
+        });
+      } catch (err) {
+        console.error("Error completing task:", err);
+        return null;
+      }
     },
     [fetchApi]
   );
 
   const gradeTask = useCallback(
     async (taskId: number, grade: number, comment?: string) => {
-      return fetchApi<{ message: string }>(`/task/grade/${taskId}`, {
-        method: "POST",
-        body: { grade, comment },
-      });
+      try {
+        return await fetchApi<{ message: string }>(`/task/grade/${taskId}`, {
+          method: "POST",
+          body: { grade, comment },
+        });
+      } catch (err) {
+        console.error("Error grading task:", err);
+        return null;
+      }
     },
     [fetchApi]
   );
 
   const getStudents = useCallback(async () => {
-    return fetchApi<{ id: number; name: string }[]>("/students");
+    try {
+      return await fetchApi<{ id: number; name: string }[]>("/students");
+    } catch (err) {
+      console.error("Error fetching students:", err);
+      return [];
+    }
   }, [fetchApi]);
 
   const uploadFile = useCallback(async (taskId: number, file: File) => {
@@ -161,21 +193,25 @@ export const useApi = () => {
       const response = await fetch(`${API_URL}/upload/${taskId}`, {
         method: "POST",
         credentials: "include",
+        mode: "cors",
         body: formData,
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(
-          data.message || "Wystąpił błąd podczas przesyłania pliku"
-        );
+        try {
+          const errorData = await response.json();
+          throw new Error(errorData.message || `Błąd HTTP: ${response.status}`);
+        } catch (jsonError) {
+          throw new Error(`Błąd HTTP: ${response.status}`);
+        }
       }
 
+      const data = await response.json();
       return data;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Nieznany błąd";
       setError(errorMessage);
+      console.error("Upload Error:", err);
       return null;
     } finally {
       setLoading(false);

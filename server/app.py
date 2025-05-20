@@ -4,12 +4,19 @@ from flask_login import UserMixin, login_user, LoginManager, login_required, log
 from flask_bcrypt import Bcrypt
 from datetime import datetime
 from werkzeug.utils import secure_filename
+from flask_cors import CORS
 import os
 import uuid
 
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg'}
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {
+    "origins": ["http://localhost:3000", "http://127.0.0.1:3000"], 
+    "supports_credentials": True, 
+    "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"], 
+    "allow_headers": ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"]
+}})
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///changeItXD.db'
 app.config['SECRET_KEY'] = 'trzebazmienic'
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -64,6 +71,11 @@ def log_action(user_id, action):
     new_log = Log(user_id=user_id, action=f"{user.name} {user.surname}, " + action)
     db.session.add(new_log)
     db.session.commit()
+
+@app.route('/', defaults={'path': ''}, methods=['OPTIONS'])
+@app.route('/<path:path>', methods=['OPTIONS'])
+def options_handler(path):
+    return jsonify({}), 200
 
 @app.route('/login', methods=['POST'])
 def login():
