@@ -327,9 +327,7 @@ def allowed_file(filename):
 @app.route('/clear_db', methods=['POST'])
 def clear_db():
     try:
-        # Drop all tables
         db.drop_all()
-        # Recreate all tables
         db.create_all()
         return jsonify({"message": "Database cleared successfully"}), 200
     except Exception as e:
