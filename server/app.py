@@ -324,5 +324,16 @@ def get_task_details(task_id):
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+@app.route('/clear_db', methods=['POST'])
+def clear_db():
+    try:
+        # Drop all tables
+        db.drop_all()
+        # Recreate all tables
+        db.create_all()
+        return jsonify({"message": "Database cleared successfully"}), 200
+    except Exception as e:
+        return jsonify({"message": f"Error clearing database: {str(e)}"}), 500
+
 if __name__ == '__main__':
     app.run(debug=True)
