@@ -8,17 +8,41 @@ import { StudentDashboard } from "@/components/student-dashboard";
 import { SharedLayout } from "@/components/shared-layout";
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, isAuthLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!user) {
+    if (!isAuthLoading && !user) {
       router.push("/login");
     }
-  }, [user, router]);
+  }, [user, isAuthLoading, router]);
+
+  if (isAuthLoading) {
+    return (
+      <SharedLayout>
+        <div className="p-8 min-h-screen w-full">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex justify-center items-center h-64">
+              <p className="text-black">Ładowanie sesji...</p>
+            </div>
+          </div>
+        </div>
+      </SharedLayout>
+    );
+  }
 
   if (!user) {
-    return null;
+    return (
+      <SharedLayout>
+        <div className="p-8 min-h-screen w-full">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex justify-center items-center h-64">
+              <p className="text-black">Przekierowywanie do logowania...</p>
+            </div>
+          </div>
+        </div>
+      </SharedLayout>
+    );
   }
 
   return (

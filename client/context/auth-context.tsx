@@ -29,12 +29,14 @@ type AuthContextType = {
   logout: () => Promise<void>;
   loading: boolean;
   error: string | null;
+  isAuthLoading: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
   const {
     login: apiLogin,
     register: apiRegister,
@@ -50,9 +52,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         setUser(JSON.parse(storedUser));
       } catch (e) {
+        console.error("Failed to parse user from localStorage:", e);
         localStorage.removeItem("user");
       }
     }
+    setIsAuthLoading(false);
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
@@ -93,7 +97,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, login, register, logout, loading, error }}
+      value={{ user, login, register, logout, loading, error, isAuthLoading }}
     >
       {children}
     </AuthContext.Provider>
