@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, redirect } from "next/navigation";
+import { useEffect } from "react";
+import { useParams, redirect, useRouter } from "next/navigation";
 import { TaskDetail } from "@/components/task-details";
 import { useAuth } from "@/context/auth-context";
 import { SharedLayout } from "@/components/shared-layout";
@@ -14,33 +14,46 @@ type User = {
 
 export default function TaskDetailPage() {
   const { taskId } = useParams();
-  const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, isAuthLoading } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
-    // Sprawdzamy, czy użytkownik jest zalogowany
-    if (user === null) {
-      redirect("/login");
-    } else {
-      setIsLoading(false);
+    if (!isAuthLoading && user === null) {
+      router.push("/login");
     }
-  }, [user]);
+  }, [user, isAuthLoading, router]);
 
-  if (isLoading) {
+  if (isAuthLoading) {
     return (
-      <div className="p-8 min-h-screen w-full">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex justify-center items-center h-64">
-            <p className="text-black">Ładowanie...</p>
+      <SharedLayout>
+        <div className="p-8 min-h-screen w-full">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex justify-center items-center h-64">
+              <p className="text-black">Ładowanie sesji...</p>
+            </div>
           </div>
         </div>
-      </div>
+      </SharedLayout>
+    );
+  }
+
+  if (user === null) {
+    return (
+      <SharedLayout>
+        <div className="p-8 min-h-screen w-full">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex justify-center items-center h-64">
+              <p className="text-black">Przekierowywanie do logowania...</p>
+            </div>
+          </div>
+        </div>
+      </SharedLayout>
     );
   }
 
   return (
     <SharedLayout>
-      {user && <TaskDetail taskId={Number(taskId)} user={user} />}
+      <TaskDetail taskId={Number(taskId)} user={user} />
     </SharedLayout>
   );
 }
