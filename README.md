@@ -14,6 +14,10 @@ npm run dev
 
 ```bash
 
+pip3 install -r requirements.txt
+python3 create_tables.py
+python3 app.py
+
 ```
 
 ## Figma
