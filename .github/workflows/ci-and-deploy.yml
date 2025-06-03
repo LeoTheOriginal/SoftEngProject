@@ -77,9 +77,9 @@ jobs:
         run: npm run build
         working-directory: ./client
 
-      - name: 7️⃣ Next.js Export (statyczne pliki)
-        run: npx next export
-        working-directory: ./client
+      # - name: 7️⃣ Next.js Export (statyczne pliki)
+      #   run: npx next export
+      #   working-directory: ./client
 
       - name: 8️⃣ Upload exported site as artifact
         uses: actions/upload-artifact@v4
