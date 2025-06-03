@@ -67,9 +67,11 @@ jobs:
         run: npm ci
         working-directory: ./client
 
-      - name: 5️⃣ Lint code (bez interakcji)
-        run: npx next lint --no-interactive
+      - name: 5️⃣ Lint code (tryb CI – bez interaktywności)
+        run: npm run lint
         working-directory: ./client
+        env:
+          CI: true
 
       - name: 6️⃣ Build application
         run: npm run build
