@@ -24,7 +24,7 @@ jobs:
         working-directory: ./client
 
       - name: Lint code
-        run: npm run lint -- --no-interactive
+        run: npm run lint
         working-directory: ./client
 
       - name: Build application
