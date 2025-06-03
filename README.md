@@ -28,5 +28,4 @@ Otwórz [http://localhost:3000](http://localhost:3000)
 
 ## Dokumentacja
 - [Dokumentacja API](https://github.com/LeoTheOriginal/SoftEngProject/blob/main/docs/API_docs.md)
-- [Dokumentacja użytkownika](https://github.com/LeoTheOriginal/SoftEngProject/blob/main/docs)
-- [Dokumentacja systemowa](https://github.com/LeoTheOriginal/SoftEngProject/blob/main/docs)
+- [Dokumentacja systemowa](https://github.com/LeoTheOriginal/SoftEngProject/blob/main/docs/SystemArchitecture_docs.md)

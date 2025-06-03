@@ -1,12 +1,12 @@
 # Dokumentacja API
 
 ## Spis treści
-- Wprowadzenie
-- Konfiguracja i autoryzacja
-- Schematy danych
-- Endpointy API
-- Obsługa błędów
-- Przykłady użycia
+- [Wprowadzenie](#wprowadzenie)
+- [Konfiguracja i autoryzacja](#konfiguracja-i-autoryzacja)
+- [Schematy danych](#schematy-danych)
+- [Endpointy API](#endpointy-api)
+- [Obsługa błędów](#obsługa-błędów)
+- [Przykłady użycia](#przykłady-użycia)
 
 ## Diagram Architektury
 ![Diagram Architektury](images/ArchitekturaSystemu.png)
