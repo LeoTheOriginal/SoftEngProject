@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useParams, redirect, useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { TaskDetail } from "@/components/task-details";
 import { useAuth } from "@/context/auth-context";
 import { SharedLayout } from "@/components/shared-layout";
