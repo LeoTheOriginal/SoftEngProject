@@ -1,61 +1,72 @@
+name: CI and Deploy
+
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
-  test:
-    name: Test & Build
+  build-and-test:
+    name: 🛠 Test · Lint · Build · Export
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: 1️⃣ Checkout repository
         uses: actions/checkout@v3
 
-      - name: Use Node.js 18.x
+      - name: 2️⃣ Set up Node.js 18.x
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      - name: Install dependencies
+      - name: 3️⃣ Cache node modules
+        uses: actions/cache@v3
+        with:
+          # Ścieżka do katalogu, który chcemy “cache’ować”
+          path: ~/.npm
+          # Klucz cache – zawiera hash pliku lockfile, więc jeśli lockfile się nie zmieni, akcja weźmie pakiety z cache
+          key: ${{ runner.os }}-node-${{ hashFiles('client/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: 4️⃣ Install dependencies
         run: npm ci
         working-directory: ./client
 
-      - name: Lint code
-        run: npm run lint
+      - name: 5️⃣ Lint code (bez interakcji)
+        run: npx next lint --no-interactive
         working-directory: ./client
 
-      - name: Build application
+      - name: 6️⃣ Build application
         run: npm run build
         working-directory: ./client
 
+      - name: 7️⃣ Next Export (statyczne pliki)
+        run: npm run export
+        working-directory: ./client
+
+      - name: 8️⃣ Upload exported site as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: exported-site
+          path: client/out
+
   deploy:
-    name: Deploy to GitHub Pages
-    needs: test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    name: 🚀 Deploy to GitHub Pages
+    needs: build-and-test
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
-      - name: Checkout repository
+      - name: 1️⃣ Checkout repository
         uses: actions/checkout@v3
 
-      - name: Use Node.js 18.x
-        uses: actions/setup-node@v3
+      - name: 2️⃣ Download exported artifact
+        uses: actions/download-artifact@v3
         with:
-          node-version: '18'
+          name: exported-site
+          path: client/out
 
-      - name: Install dependencies
-        run: npm ci
-        working-directory: ./client
-
-      - name: Build & export static files
-        run: |
-          npm run build
-          npx next export
-        working-directory: ./client
-
-      - name: Deploy to GitHub Pages
+      - name: 3️⃣ Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
