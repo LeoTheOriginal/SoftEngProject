@@ -238,10 +238,8 @@ Dokumentacja techniczna systemu **Platforma e-learningowa** – platformy e-lear
 ### 8.2 Rekomendacje dla Zwiększenia Skalowalności
 
 - Docker + docker-compose  
-- PostgreSQL  
 - Gunicorn + Nginx  
 - Redis (cache, sesje)  
-- CI/CD: GitHub Actions  
 
 ## 9. Integracja z Dodatkowymi Modułami
 
@@ -300,7 +298,6 @@ Dokumentacja techniczna systemu **Platforma e-learningowa** – platformy e-lear
 
 - Skalowalność  
 - Obsługa błędów  
-- Brak CI/CD  
 
 ### 12.3 Roadmapa Rozwoju
 
