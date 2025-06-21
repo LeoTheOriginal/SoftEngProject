@@ -20,6 +20,21 @@ python3 app.py
 
 ```
 
+## Odpalanie testow BE
+
+```bash
+
+# pip3 install -r requirements.txt
+pytest
+
+```
+
+## Odpalanie testow funkcjonalnych (Postman)
+
+zaimportować plik server\flask_api_tests.postman_collection.json
+
+kliknąć run all
+
 ## Figma
 
 [https://www.figma.com/design/xDCqQKXZrVnbPFtO5KOBHX/Design-platformy?node-id=4-2&t=NzogZT865VUNy9DN-1](https://www.figma.com/design/xDCqQKXZrVnbPFtO5KOBHX/Design-platformy?node-id=4-2&t=NzogZT865VUNy9DN-1)
